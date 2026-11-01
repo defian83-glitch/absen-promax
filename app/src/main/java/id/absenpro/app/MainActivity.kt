@@ -1,6 +1,18 @@
 package id.absenpro.app
 
 import android.os.Bundle
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
+
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -100,6 +112,9 @@ fun AbsenProApp() {
                             Text("Mode Kiosk • Perangkat absensi kantor", color = MaterialTheme.colorScheme.primary)
                             Text("Tahap V3.1: kerangka mode kiosk sudah tersedia. Integrasi kamera dan deteksi wajah lintas perangkat menjadi tahap berikutnya.")
                             Text("Data pegawai dan riwayat V2 tetap tersimpan di penyimpanan aplikasi.", style = MaterialTheme.typography.bodyMedium)
+                            Text("KAMERA KIOSK", fontWeight = FontWeight.Bold)
+                            CameraPreview(modifier = Modifier.fillMaxWidth().height(300.dp))
+                            Text("Catatan: tahap ini menampilkan kamera depan. Verifikasi identitas wajah belum diaktifkan.")
                             Text("PENTING: jangan gunakan pengenalan wajah untuk mengambil keputusan sebelum proses pendaftaran wajah, uji akurasi, dan perlindungan data pegawai selesai.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                             Button(onClick = { appMode = "Admin" }, modifier = Modifier.fillMaxWidth()) { Text("KEMBALI KE ADMIN") }
                         }
@@ -221,6 +236,60 @@ fun AbsenProApp() {
                 }
                 }
             }
+        }
+    }
+}
+
+
+@Composable
+private fun CameraPreview(modifier: Modifier = Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var hasPermission by remember {
+        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted -> hasPermission = granted }
+
+    LaunchedEffect(Unit) {
+        if (!hasPermission) permissionLauncher.launch(Manifest.permission.CAMERA)
+    }
+
+    if (hasPermission) {
+        AndroidView(
+            modifier = modifier,
+            factory = { ctx ->
+                val previewView = PreviewView(ctx).apply {
+                    scaleType = PreviewView.ScaleType.FILL_CENTER
+                    implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+                }
+                val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+                cameraProviderFuture.addListener({
+                    try {
+                        val cameraProvider = cameraProviderFuture.get()
+                        val preview = Preview.Builder().build().also {
+                            it.surfaceProvider = previewView.surfaceProvider
+                        }
+                        cameraProvider.unbindAll()
+                        cameraProvider.bindToLifecycle(
+                            lifecycleOwner,
+                            CameraSelector.DEFAULT_FRONT_CAMERA,
+                            preview
+                        )
+                    } catch (e: Exception) {
+                        android.util.Log.e("AbsenProCamera", "Gagal membuka kamera depan", e)
+                    }
+                }, ContextCompat.getMainExecutor(ctx))
+                previewView
+            }
+        )
+    } else {
+        Box(
+            modifier = modifier,
+            contentAlignment = androidx.compose.ui.Alignment.Center
+        ) {
+            Text("Izin kamera diperlukan. Aktifkan izin kamera untuk Mode Kiosk.")
         }
     }
 }
