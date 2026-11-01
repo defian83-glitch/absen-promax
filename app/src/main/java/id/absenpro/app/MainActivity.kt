@@ -22,6 +22,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -148,16 +150,16 @@ fun AbsenProApp() {
                 Spacer(Modifier.height(4.dp))
                 if (appMode == "Kiosk") {
                     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Column(Modifier.padding(16.dp).fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Text("ABSENSI WAJAH", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                             Text("Mode Kiosk • Perangkat absensi kantor", color = MaterialTheme.colorScheme.primary)
                             Text("Posisikan wajah di tengah bingkai. Deteksi berjalan langsung di perangkat.", style = MaterialTheme.typography.bodyMedium)
                             var faceStatus by remember { mutableStateOf("Menyiapkan kamera dan deteksi wajah…") }
                             Text("KAMERA KIOSK", fontWeight = FontWeight.Bold)
-                            CameraPreview(modifier = Modifier.fillMaxWidth().height(300.dp), onFaceStatus = { faceStatus = it })
+                            CameraPreview(modifier = Modifier.fillMaxWidth().heightIn(min = 220.dp, max = 280.dp), onFaceStatus = { faceStatus = it })
                             Text(faceStatus, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
-                            Text("V3.5: deteksi wajah berjalan di perangkat. Pengenalan identitas pegawai, pendaftaran template biometrik, dan anti-foto belum diaktifkan.", style = MaterialTheme.typography.bodySmall)
-                            Text("PENTING: status “wajah terdeteksi” bukan bukti identitas. Absensi biometrik belum aktif; gunakan metode admin/manual sampai pencocokan wajah dan uji anti-foto selesai.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                            Text("Status V3.6: kamera dan deteksi wajah aktif. Pengenalan identitas, pendaftaran template biometrik, dan anti-foto belum boleh digunakan sebelum model biometrik tervalidasi dipasang.", style = MaterialTheme.typography.bodySmall)
+                            Text("KEAMANAN: deteksi wajah bukan verifikasi identitas. Jangan gunakan hasil deteksi untuk mengabsen otomatis. Sementara gunakan absensi admin/manual.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                             Button(onClick = { appMode = "Admin" }, modifier = Modifier.fillMaxWidth()) { Text("KEMBALI KE ADMIN") }
                         }
                     }
@@ -206,8 +208,8 @@ fun AbsenProApp() {
                     1 -> {
                         LazyColumn {
                             item {
-                                OutlinedTextField(name, { name = it }, label = { Text("Nama pegawai") }, modifier = Modifier.fillMaxWidth())
-                                OutlinedTextField(division, { division = it }, label = { Text("Divisi") }, modifier = Modifier.fillMaxWidth())
+                                OutlinedTextField(name, { name = it }, label = { Text("Nama pegawai") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                                OutlinedTextField(division, { division = it }, label = { Text("Divisi") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                                 Text("Skema gaji", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
                                 Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                                     listOf("Bulanan", "Harian", "Kombinasi").forEach { p -> FilterChip(selected = payType == p, onClick = { payType = p }, label = { Text(p) }) }

@@ -12,8 +12,8 @@ android {
         applicationId = "id.absenpro.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 6
-        versionName = "3.5.0"
+        versionCode = 7
+        versionName = "3.6.0"
     }
 
     compileOptions {
