@@ -96,12 +96,15 @@ fun AbsenProApp() {
     val rupiah = remember { NumberFormat.getCurrencyInstance(Locale("in", "ID")) }
     val month = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(Date())
 
+    val navy = androidx.compose.ui.graphics.Color(0xFF102A43)
+    val blue = androidx.compose.ui.graphics.Color(0xFF246BFD)
     val blueScheme = lightColorScheme(
-        primary = androidx.compose.ui.graphics.Color(0xFF1769D2),
+        primary = blue,
         onPrimary = androidx.compose.ui.graphics.Color.White,
-        secondary = androidx.compose.ui.graphics.Color(0xFF4D83C8),
-        background = androidx.compose.ui.graphics.Color(0xFFF5F7FB),
-        surface = androidx.compose.ui.graphics.Color.White
+        secondary = androidx.compose.ui.graphics.Color(0xFF14B8A6),
+        background = androidx.compose.ui.graphics.Color(0xFFF3F6FC),
+        surface = androidx.compose.ui.graphics.Color.White,
+        onSurface = navy
     )
     MaterialTheme(colorScheme = blueScheme) {
         Scaffold(
@@ -109,17 +112,40 @@ fun AbsenProApp() {
         topBar = { TopAppBar(
             title = { Column {
                 Text("ABSEN PRO MAX", fontWeight = FontWeight.ExtraBold)
-                Text("ABSENSI • DATA PEGAWAI • PAYROLL", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("ABSENSI • DATA PEGAWAI • PAYROLL", style = MaterialTheme.typography.labelSmall, color = androidx.compose.ui.graphics.Color(0xFFB9CBE0))
             } },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = androidx.compose.ui.graphics.Color(0xFFE6EEFF))
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = androidx.compose.ui.graphics.Color(0xFF102A43),
+                titleContentColor = androidx.compose.ui.graphics.Color.White
+            )
         ) }
     ) { padding ->
             Column(Modifier.padding(padding).padding(horizontal = 16.dp, vertical = 14.dp).fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selected = appMode == "Admin", onClick = { appMode = "Admin" }, label = { Text("Mode Admin") })
-                    FilterChip(selected = appMode == "Kiosk", onClick = { appMode = "Kiosk" }, label = { Text("Mode Kiosk") })
+                    FilterChip(selected = appMode == "Admin", onClick = { appMode = "Admin" }, label = { Text("ADMIN") })
+                    FilterChip(selected = appMode == "Kiosk", onClick = { appMode = "Kiosk" }, label = { Text("KIOSK ABSENSI") })
                 }
-                Spacer(Modifier.height(10.dp))
+                if (appMode == "Admin") {
+                    val todayKey = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                    val todayRecords = records.filter { it.date == todayKey }
+                    val presentToday = todayRecords.count { it.status == "Hadir" || it.status == "Terlambat" }
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.extraLarge,
+                        colors = CardDefaults.cardColors(containerColor = androidx.compose.ui.graphics.Color(0xFF102A43))
+                    ) {
+                        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("PANEL KONTROL HARIAN", color = androidx.compose.ui.graphics.Color(0xFF9DBCEB), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                            Text("Kelola kehadiran tim dengan mudah.", color = androidx.compose.ui.graphics.Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                SummaryTile("PEGAWAI", employees.size.toString(), Modifier.weight(1f))
+                                SummaryTile("HADIR HARI INI", presentToday.toString(), Modifier.weight(1f))
+                                SummaryTile("CATATAN", todayRecords.size.toString(), Modifier.weight(1f))
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
                 if (appMode == "Kiosk") {
                     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -136,7 +162,7 @@ fun AbsenProApp() {
                         }
                     }
                 } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     FilterChip(selected = tab == 0, onClick = { tab = 0 }, label = { Text("Absensi") })
                     FilterChip(selected = tab == 1, onClick = { tab = 1 }, label = { Text("Pegawai") })
                     FilterChip(selected = tab == 2, onClick = { tab = 2 }, label = { Text("Rekap") })
@@ -256,6 +282,19 @@ fun AbsenProApp() {
     }
 }
 
+
+@Composable
+private fun SummaryTile(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .padding(top = 6.dp)
+            .then(Modifier),
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Text(value, color = androidx.compose.ui.graphics.Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+        Text(label, color = androidx.compose.ui.graphics.Color(0xFFB9CBE0), style = MaterialTheme.typography.labelSmall)
+    }
+}
 
 @Composable
 private fun CameraPreview(modifier: Modifier = Modifier, onFaceStatus: (String) -> Unit = {}) {
