@@ -12,8 +12,8 @@ android {
         applicationId = "id.absenpro.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "3.1.0"
+        versionCode = 4
+        versionName = "3.3.0"
     }
 
     compileOptions {
@@ -44,5 +44,7 @@ dependencies {
     implementation("androidx.camera:camera-camera2:1.4.1")
     implementation("androidx.camera:camera-lifecycle:1.4.1")
     implementation("androidx.camera:camera-view:1.4.1")
+    // Deteksi wajah real-time di perangkat (tidak mengirim gambar ke server)
+    implementation("com.google.mlkit:face-detection:16.1.7")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

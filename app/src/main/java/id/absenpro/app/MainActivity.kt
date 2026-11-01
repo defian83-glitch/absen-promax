@@ -8,6 +8,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageProxy
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.face.FaceDetection
+import com.google.mlkit.vision.face.FaceDetectorOptions
+import java.util.concurrent.Executors
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -98,8 +104,17 @@ fun AbsenProApp() {
         surface = androidx.compose.ui.graphics.Color.White
     )
     MaterialTheme(colorScheme = blueScheme) {
-        Scaffold(topBar = { TopAppBar(title = { Text("ABSEN PRO MAX V3", fontWeight = FontWeight.Bold) }) }) { padding ->
-            Column(Modifier.padding(padding).padding(16.dp).fillMaxSize()) {
+        Scaffold(
+        containerColor = androidx.compose.ui.graphics.Color(0xFFF3F6FC),
+        topBar = { TopAppBar(
+            title = { Column {
+                Text("ABSEN PRO MAX", fontWeight = FontWeight.ExtraBold)
+                Text("ABSENSI • DATA PEGAWAI • PAYROLL", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = androidx.compose.ui.graphics.Color(0xFFE6EEFF))
+        ) }
+    ) { padding ->
+            Column(Modifier.padding(padding).padding(horizontal = 16.dp, vertical = 14.dp).fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(selected = appMode == "Admin", onClick = { appMode = "Admin" }, label = { Text("Mode Admin") })
                     FilterChip(selected = appMode == "Kiosk", onClick = { appMode = "Kiosk" }, label = { Text("Mode Kiosk") })
@@ -110,11 +125,12 @@ fun AbsenProApp() {
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text("ABSENSI WAJAH", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                             Text("Mode Kiosk • Perangkat absensi kantor", color = MaterialTheme.colorScheme.primary)
-                            Text("Tahap V3.1: kerangka mode kiosk sudah tersedia. Integrasi kamera dan deteksi wajah lintas perangkat menjadi tahap berikutnya.")
-                            Text("Data pegawai dan riwayat V2 tetap tersimpan di penyimpanan aplikasi.", style = MaterialTheme.typography.bodyMedium)
+                            Text("Posisikan wajah di tengah bingkai. Deteksi berjalan langsung di perangkat.", style = MaterialTheme.typography.bodyMedium)
+                            var faceStatus by remember { mutableStateOf("Menyiapkan kamera dan deteksi wajah…") }
                             Text("KAMERA KIOSK", fontWeight = FontWeight.Bold)
-                            CameraPreview(modifier = Modifier.fillMaxWidth().height(300.dp))
-                            Text("Catatan: tahap ini menampilkan kamera depan. Verifikasi identitas wajah belum diaktifkan.")
+                            CameraPreview(modifier = Modifier.fillMaxWidth().height(300.dp), onFaceStatus = { faceStatus = it })
+                            Text(faceStatus, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                            Text("Deteksi wajah hanya menemukan wajah. Pencocokan identitas dengan pegawai dan penyimpanan foto wajah belum aktif.", style = MaterialTheme.typography.bodySmall)
                             Text("PENTING: jangan gunakan pengenalan wajah untuk mengambil keputusan sebelum proses pendaftaran wajah, uji akurasi, dan perlindungan data pegawai selesai.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                             Button(onClick = { appMode = "Admin" }, modifier = Modifier.fillMaxWidth()) { Text("KEMBALI KE ADMIN") }
                         }
@@ -242,7 +258,7 @@ fun AbsenProApp() {
 
 
 @Composable
-private fun CameraPreview(modifier: Modifier = Modifier) {
+private fun CameraPreview(modifier: Modifier = Modifier, onFaceStatus: (String) -> Unit = {}) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var hasPermission by remember {
@@ -265,6 +281,20 @@ private fun CameraPreview(modifier: Modifier = Modifier) {
                     implementationMode = PreviewView.ImplementationMode.COMPATIBLE
                 }
                 val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+                val analysisExecutor = Executors.newSingleThreadExecutor()
+                val detector = FaceDetection.getClient(
+                    FaceDetectorOptions.Builder()
+                        .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
+                        .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_NONE)
+                        .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_NONE)
+                        .build()
+                )
+                val analysis = ImageAnalysis.Builder()
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .build()
+                analysis.setAnalyzer(analysisExecutor) { imageProxy ->
+                    processFaceFrame(imageProxy, detector, onFaceStatus)
+                }
                 cameraProviderFuture.addListener({
                     try {
                         val cameraProvider = cameraProviderFuture.get()
@@ -275,7 +305,8 @@ private fun CameraPreview(modifier: Modifier = Modifier) {
                         cameraProvider.bindToLifecycle(
                             lifecycleOwner,
                             CameraSelector.DEFAULT_FRONT_CAMERA,
-                            preview
+                            preview,
+                            analysis
                         )
                     } catch (e: Exception) {
                         android.util.Log.e("AbsenProCamera", "Gagal membuka kamera depan", e)
@@ -292,6 +323,27 @@ private fun CameraPreview(modifier: Modifier = Modifier) {
             Text("Izin kamera diperlukan. Aktifkan izin kamera untuk Mode Kiosk.")
         }
     }
+}
+
+private fun processFaceFrame(
+    imageProxy: ImageProxy,
+    detector: com.google.mlkit.vision.face.FaceDetector,
+    onFaceStatus: (String) -> Unit
+) {
+    val mediaImage = imageProxy.image
+    if (mediaImage == null) { imageProxy.close(); return }
+    val input = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+    detector.process(input)
+        .addOnSuccessListener { faces ->
+            val message = when (faces.size) {
+                0 -> "Belum ada wajah terdeteksi — arahkan wajah ke kamera."
+                1 -> "1 wajah terdeteksi — posisi wajah terbaca."
+                else -> "${faces.size} wajah terdeteksi — pastikan hanya satu pegawai di depan kamera."
+            }
+            onFaceStatus(message)
+        }
+        .addOnFailureListener { onFaceStatus("Deteksi wajah gagal: ${it.localizedMessage ?: "coba lagi"}") }
+        .addOnCompleteListener { imageProxy.close() }
 }
 
 @Composable
