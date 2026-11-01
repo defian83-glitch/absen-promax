@@ -1,29 +1,23 @@
-# ABSEN PROMAX V2
+# ABSEN PRO MAX V3.1 — Multi-Device Android
 
-Pengembangan dari ABSEN PRO V1. Data absensi dan pegawai lama tetap dibaca dari SharedPreferences yang sama.
+Project dasar V3 dibuat dari source V2 dengan mempertahankan penyimpanan lokal kompatibel:
+- SharedPreferences: `absen_pro`
+- Keys: `employees` dan `records`
 
-## Fitur
-- Maksimal 80 pegawai dan beberapa divisi.
-- Absensi manual: Hadir, Terlambat, Izin, Sakit, Alpa, Cuti, Libur.
-- Jam kerja acuan 08:00–17:00.
-- Rekap absensi dan riwayat.
-- Pengaturan skema gaji per pegawai: Bulanan, Harian, atau Kombinasi.
-- Uang makan Rp10.000 per hari hadir (Hadir/Terlambat).
-- Estimasi potongan keterlambatan per menit dan Alpa per hari.
-- Insentif bulanan dan lembur berdasarkan jam pulang setelah 17:00.
-- Data lama tetap kompatibel; nilai penggajian pegawai lama dimulai dari nol dan dapat diatur.
+## Fitur yang sudah ada
+- Data pegawai maksimal 80 orang dan divisi
+- Input absensi manual, rekap, dan estimasi gaji
+- Tunjangan makan Rp10.000 per hari hadir
+- Skema gaji bulanan, harian, kombinasi, potongan, insentif, dan lembur
+- Pilihan Mode Admin dan kerangka Mode Kiosk
+- Tema Clean Modern putih/biru
 
-## Rumus estimasi penggajian bulanan
-- Bulanan: gaji pokok bulanan.
-- Harian: upah harian × jumlah hari Hadir/Terlambat.
-- Kombinasi: gaji bulanan + (upah harian × hari hadir).
-- Tambahan: uang makan × hari hadir + insentif bulanan + lembur.
-- Potongan: menit terlambat × tarif potongan/menit + Alpa × potongan/hari.
+## Tahap berikutnya
+1. CameraX preview dan deteksi wajah ML Kit.
+2. Pendaftaran template wajah per pegawai dan pencocokan lokal.
+3. Liveness / anti-foto, pengujian lintas perangkat, dan kontrol admin.
 
-Catatan: ini estimasi berdasarkan catatan bulan berjalan. Aturan prorata gaji bulanan, hari libur, pembulatan lembur, dan kebijakan potongan perlu disesuaikan dengan ketentuan perusahaan. Data masih tersimpan lokal pada satu perangkat.
+Catatan: V3.1 belum melakukan pengenalan identitas wajah. Deteksi wajah bukan pengenalan nama. Sebelum mengaktifkan biometrik, sediakan pemberitahuan dan persetujuan/kebijakan yang sesuai, batasi akses, enkripsi template biometrik, tetapkan masa simpan, dan sediakan metode absensi alternatif.
 
-## Build APK lewat GitHub Actions
-1. Upload seluruh isi ZIP ini ke repository GitHub yang digunakan untuk ABSEN PRO.
-2. Commit/push ke branch `main`.
-3. Buka tab **Actions** dan tunggu workflow **Build ABSEN PRO APK** selesai.
-4. Unduh artifact **ABSEN-PRO-debug-apk**, lalu instal APK di HP.
+## Build APK
+Workflow GitHub Actions tersedia di `.github/workflows/build.yml` dan membangun `app-debug.apk` saat push ke `main` atau dijalankan manual.

@@ -58,6 +58,7 @@ fun AbsenProApp() {
     var timeIn by remember { mutableStateOf("08:00") }
     var timeOut by remember { mutableStateOf("17:00") }
     var tab by remember { mutableIntStateOf(0) }
+    var appMode by remember { mutableStateOf("Admin") }
     var message by remember { mutableStateOf("") }
 
     fun saveEmployees() {
@@ -77,9 +78,33 @@ fun AbsenProApp() {
     val rupiah = remember { NumberFormat.getCurrencyInstance(Locale("in", "ID")) }
     val month = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(Date())
 
-    MaterialTheme {
-        Scaffold(topBar = { TopAppBar(title = { Text("ABSEN PROMAX", fontWeight = FontWeight.Bold) }) }) { padding ->
+    val blueScheme = lightColorScheme(
+        primary = androidx.compose.ui.graphics.Color(0xFF1769D2),
+        onPrimary = androidx.compose.ui.graphics.Color.White,
+        secondary = androidx.compose.ui.graphics.Color(0xFF4D83C8),
+        background = androidx.compose.ui.graphics.Color(0xFFF5F7FB),
+        surface = androidx.compose.ui.graphics.Color.White
+    )
+    MaterialTheme(colorScheme = blueScheme) {
+        Scaffold(topBar = { TopAppBar(title = { Text("ABSEN PRO MAX V3", fontWeight = FontWeight.Bold) }) }) { padding ->
             Column(Modifier.padding(padding).padding(16.dp).fillMaxSize()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(selected = appMode == "Admin", onClick = { appMode = "Admin" }, label = { Text("Mode Admin") })
+                    FilterChip(selected = appMode == "Kiosk", onClick = { appMode = "Kiosk" }, label = { Text("Mode Kiosk") })
+                }
+                Spacer(Modifier.height(10.dp))
+                if (appMode == "Kiosk") {
+                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text("ABSENSI WAJAH", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                            Text("Mode Kiosk • Perangkat absensi kantor", color = MaterialTheme.colorScheme.primary)
+                            Text("Tahap V3.1: kerangka mode kiosk sudah tersedia. Integrasi kamera dan deteksi wajah lintas perangkat menjadi tahap berikutnya.")
+                            Text("Data pegawai dan riwayat V2 tetap tersimpan di penyimpanan aplikasi.", style = MaterialTheme.typography.bodyMedium)
+                            Text("PENTING: jangan gunakan pengenalan wajah untuk mengambil keputusan sebelum proses pendaftaran wajah, uji akurasi, dan perlindungan data pegawai selesai.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                            Button(onClick = { appMode = "Admin" }, modifier = Modifier.fillMaxWidth()) { Text("KEMBALI KE ADMIN") }
+                        }
+                    }
+                } else {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     FilterChip(selected = tab == 0, onClick = { tab = 0 }, label = { Text("Absensi") })
                     FilterChip(selected = tab == 1, onClick = { tab = 1 }, label = { Text("Pegawai") })
@@ -193,6 +218,7 @@ fun AbsenProApp() {
                             }
                         }
                     }
+                }
                 }
             }
         }
