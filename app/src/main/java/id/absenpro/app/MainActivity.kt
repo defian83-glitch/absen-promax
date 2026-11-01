@@ -156,8 +156,8 @@ fun AbsenProApp() {
                             Text("KAMERA KIOSK", fontWeight = FontWeight.Bold)
                             CameraPreview(modifier = Modifier.fillMaxWidth().height(300.dp), onFaceStatus = { faceStatus = it })
                             Text(faceStatus, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
-                            Text("Deteksi wajah hanya menemukan wajah. Pencocokan identitas dengan pegawai dan penyimpanan foto wajah belum aktif.", style = MaterialTheme.typography.bodySmall)
-                            Text("PENTING: jangan gunakan pengenalan wajah untuk mengambil keputusan sebelum proses pendaftaran wajah, uji akurasi, dan perlindungan data pegawai selesai.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                            Text("V3.5: deteksi wajah berjalan di perangkat. Pengenalan identitas pegawai, pendaftaran template biometrik, dan anti-foto belum diaktifkan.", style = MaterialTheme.typography.bodySmall)
+                            Text("PENTING: status “wajah terdeteksi” bukan bukti identitas. Absensi biometrik belum aktif; gunakan metode admin/manual sampai pencocokan wajah dan uji anti-foto selesai.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                             Button(onClick = { appMode = "Admin" }, modifier = Modifier.fillMaxWidth()) { Text("KEMBALI KE ADMIN") }
                         }
                     }
@@ -326,6 +326,8 @@ private fun CameraPreview(modifier: Modifier = Modifier, onFaceStatus: (String) 
                         .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
                         .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_NONE)
                         .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_NONE)
+                        .setMinFaceSize(0.12f)
+                        .enableTracking()
                         .build()
                 )
                 val analysis = ImageAnalysis.Builder()
